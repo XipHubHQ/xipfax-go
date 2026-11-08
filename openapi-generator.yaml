@@ -1,0 +1,38 @@
+# openapi-generator 7.17.0's settings for the SDK, which scripts/generate.sh passes it with the
+# document scripts/sdk-document.jq writes. packageVersion and httpUserAgent name each release.
+packageName: xipfax
+packageVersion: 0.1.0
+httpUserAgent: xipfax-go/0.1.0
+gitHost: github.com
+gitUserId: XipHubHQ
+gitRepoId: xipfax-go
+isGoSubmodule: false
+# go.mod is the repository's own: the SDK needs nothing beyond Go's standard library.
+withGoMod: false
+enumClassPrefix: true
+hideGenerationTimestamp: true
+# An answer may gain a member within its version, which the SDK keeps in AdditionalProperties
+# rather than refusing the answer, as the document's Additions rule asks.
+disallowAdditionalPropertiesIfNotPresent: false
+globalProperties:
+  apiTests: 'false'
+  modelTests: 'false'
+  apiDocs: 'false'
+  modelDocs: 'false'
+# Error isn't an error in Go: the API's refusal is APIError, as the TypeScript SDK's is ApiError.
+modelNameMappings:
+  Error: APIError
+inlineSchemaNameMappings:
+  Error_error: APIErrorObject
+  Error_error_details_inner: APIErrorDetail
+  Office_sources_inner: OfficeSource
+# Go spells an initialism in one case: ID, URL and API, as in OfficeID, DocURL and DocumentIDs.
+nameMappings:
+  api_version: APIVersion
+  confirm_url: ConfirmURL
+  doc_url: DocURL
+  document_ids: DocumentIDs
+  id: ID
+  office_id: OfficeID
+  request_id: RequestID
+  url: URL

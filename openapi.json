@@ -1,0 +1,2976 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "XipFax API",
+    "version": "2026-11-03",
+    "description": "XipFax’s API, for your own server and the apps you connect, at `https://api.xipfax.com`.\n\n**Keys.** Every operation takes an API key of your XipFax account as a bearer token, as in `Authorization: Bearer xipfax_key_live_…`. A key acts for its own account alone, and a revoked key stops at once. A request with no key is refused `401 authentication_required`, and one whose key is revoked or unknown `401 authentication_failed`.\n\n**Apps.** Every operation but registering and removing a webhook endpoint also takes, as a bearer token, the access token XipFax’s OAuth server gives an app XipFax registers for the API, once a client connects it. The app asks for the resource `https://api.xipfax.com` and the scope `fax`; a token for another resource opens nothing here, and an app that names itself by the address of its metadata document is refused `invalid_target` for this one. A token acts for the client who allowed the app, and stops at once when they disconnect it. A request whose token has expired, or whose app is disconnected, is refused `401 authentication_failed`, and one whose token lacks `fax` `403 insufficient_scope`, as is a token’s request to register or remove a webhook endpoint, which takes an API key: an endpoint an app registered would go on hearing of your faxes once you disconnect the app.\n\n**Versions.** A request may name a version in `Xip-Version`; without one, it is answered in the version that was current when its account was made. Every answer names the version it is in, and a version that isn’t released is refused `400 version_invalid`, with the released ones in `valid_versions`. A version is the day its contract was fixed: a change that would break a client ships only in a new version, and one that adds ships to every version.\n\n**Errors.** A refusal is `{\"error\": {...}}`: a `code` to branch on, a `message` for a person, one entry in `details` for each problem, and the request’s id, which `X-Request-Id` names on every answer.\n\n**Retries.** Every POST names a key of your own in `Idempotency-Key`, and runs once for it: for 24 hours, a request that names the key again is answered as the first was, with its status, body and `X-Request-Id`, its signed links and an endpoint’s secret null, though a document added by its size and still uploading gets a fresh link to upload it to. A success and a `422` are kept; any other refusal lets the key go, for a retry to run.\n\n**Webhooks.** Register an endpoint of your own server with an API key, by `POST /webhook-endpoints` with its URL: the answer shows the endpoint’s signing secret, once. Each event goes to every webhook endpoint of your account when a fax you sent is delivered or fails for good, and when a fax sent to your number arrives. An event’s body is `{\"id\", \"type\", \"api_version\", \"created_at\", \"data\"}`, the fax in `data` as `GET /faxes` gives it. Each delivery is signed per Standard Webhooks with the endpoint’s own secret: verify `webhook-signature` before you trust the body. XipFax posts only to https at a public address, and follows no redirect. Answer a 2xx within 15 seconds. After a 408, a 429, a 5xx or no answer, XipFax tries again over about three days, later where `Retry-After` asks for longer, up to a day; after a redirect or another 4xx, it stops. An event may come more than once, or after a later one: take each `id` once. An endpoint hears of nothing more once you remove it, by `DELETE /webhook-endpoints/{endpoint_id}`, or revoke the key that registered it.\n\n**Additions.** Within a version, an answer may gain a member and an open set a new value: read what you know, and carry the rest through.\n\n## Changelog\n\n### 2026-11-08\n\n#### Added\n\n- Limits on the links `POST /draft/documents` fetches for your account, whichever key or app gives them: 10 a minute and 1,000 a day. Past either, a `url` is refused `429 rate_limit_exceeded`, nothing fetched, with `Retry-After` in seconds; and where XipFax can’t count them for the moment, `503 service_unavailable`, with `Retry-After` too.\n- A fresh `upload` link when a request to `POST /draft/documents` names its `Idempotency-Key` again while the document it added by its size is still uploading, where `upload` was null: a retry whose first answer was lost can still upload the document.\n\n### 2026-11-07\n\n#### Added\n\n- `POST /webhook-endpoints`: a webhook endpoint registered by your API key at the URL you give, its signing secret shown once, in the answer; and `DELETE /webhook-endpoints/{endpoint_id}`, which removes one. Revoking a key removes the endpoints it registered, and an app’s token is refused `403 insufficient_scope` on both.\n\n### 2026-11-05\n\n#### Added\n\n- `POST /draft/send`: the draft sent to the number or the office you name, its documents as you name them, as far as your key or app may send without you: on your plan, or by your key on the card you saved; otherwise, nothing sent, and the link where it waits for you on xipfax.com.\n- `GET /faxes/{fax_id}`: a fax of your log, or your draft by its id, as `GET /faxes` gives it.\n- `GET /faxes/{fax_id}/confirmation`: a delivered fax’s confirmation, by a link that reads it for a few minutes.\n\n### 2026-11-04\n\n#### Added\n\n- An app’s access token as the bearer of every request, beside an API key: the token XipFax’s OAuth server gives an app XipFax registers for the API, once a client connects it, for the resource `https://api.xipfax.com` and the scope `fax`, which stops when the client disconnects the app; and `403 insufficient_scope` for a token without that scope.\n- `GET /faxes`: your log, every fax you sent and received, newest first, a page at a time, one way’s alone where `direction` names it.\n- `GET /plan`: your plan, its price and its period, its fax number and this month’s pages.\n- `GET /offices`: the government offices XipFax gives the fax number of, those a search finds, for a place where the agency gives a number for each.\n- Webhooks: `fax.delivered`, `fax.failed` and `fax.received`, posted to each webhook endpoint of your account as a fax you sent is delivered or fails for good and as a fax sent to your number arrives, signed per Standard Webhooks with the endpoint’s own secret, and tried again over about three days until the endpoint takes it.\n\n### 2026-11-03\n\n#### Added\n\n- The API, at `https://api.xipfax.com`, in version `2026-11-03`: an API key as the bearer of every request, the `Xip-Version` header, and this document at `/openapi.json`.\n- `GET /quote`: the price of one fax of so many pages, sent without a plan, from XipFax’s price list.\n- `GET /draft`, the fax you prepare; its documents added by `POST /draft/documents`, from a file you upload by the link it gives or from a link XipFax fetches, completed by `POST /draft/documents/{document_id}/complete` and removed by `DELETE /draft/documents/{document_id}`.\n- `Idempotency-Key` on every POST, which runs once for each key.",
+    "contact": {
+      "name": "XipFax",
+      "url": "https://xipfax.com",
+      "email": "help@xipfax.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.xipfax.com"
+    }
+  ],
+  "security": [
+    {
+      "apiKey": []
+    },
+    {
+      "appToken": [
+        "fax"
+      ]
+    }
+  ],
+  "paths": {
+    "/quote": {
+      "get": {
+        "operationId": "getQuote",
+        "tags": [
+          "Quote"
+        ],
+        "summary": "Quote a fax",
+        "description": "The price of one fax of so many pages, sent without a plan, from XipFax’s price list: what its checkout charges. A fax sent on the plan counts its pages there instead.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "name": "pages",
+            "in": "query",
+            "required": true,
+            "description": "The pages to send, the cover page among them.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250,
+              "description": "The pages to send, from 1 to 250."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The quote.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_missing`, `parameter_invalid`, `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/draft": {
+      "get": {
+        "operationId": "getDraft",
+        "tags": [
+          "Draft"
+        ],
+        "summary": "Read the draft",
+        "description": "The fax you prepare, one at a time: the same draft your account’s web app shows, with its documents in the order it sends them.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The draft.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/draft/documents": {
+      "post": {
+        "operationId": "addDocument",
+        "tags": [
+          "Draft"
+        ],
+        "summary": "Add a document",
+        "description": "Adds a PDF after the draft’s last document. Give `size_bytes` to upload it: the answer gives a link to send its bytes to, and the document is `uploading` until you complete it. Or give `url`, for XipFax to fetch it: the answer gives it `ready`, its pages counted. A PDF XipFax can’t read, one locked with a password, and one that takes the fax past 250 pages, its cover page included, are refused. XipFax fetches 10 links a minute for your account at most, and 1,000 a day, whichever key or app gives them: past either, a `url` is refused `rate_limit_exceeded`, nothing fetched, and `Retry-After` says in seconds when to try again. A document added by its `size_bytes` counts toward neither.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewDocument"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The document added, and where to upload it.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              },
+              "Location": {
+                "description": "The document, as `/draft/documents/{document_id}`.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentAdded"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_missing`, `parameter_invalid`, `parameter_unknown`, `idempotency_key_missing`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused: `idempotency_key_in_use`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Refused: `content_too_large`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: `fax_too_long`, `document_unreadable`, `document_locked`, `document_too_large`, `document_link_not_public`, `document_link_refused`, `idempotency_key_reused`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Refused: `rate_limit_exceeded`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Refused: `upstream_error`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Refused: `service_unavailable`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Refused: `upstream_timeout`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/draft/documents/{document_id}/complete": {
+      "post": {
+        "operationId": "completeDocument",
+        "tags": [
+          "Draft"
+        ],
+        "summary": "Complete a document",
+        "description": "Reads an uploaded document back: `ready`, its pages counted; or removed and refused, where XipFax can’t read it, it’s locked with a password, or it takes the fax past 250 pages, its cover page included. A document ready already is answered as it is.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document, ready.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_unknown`, `idempotency_key_missing`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Refused: `resource_not_found`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused: `document_not_uploaded`, `idempotency_key_in_use`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Refused: `content_too_large`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: `fax_too_long`, `document_unreadable`, `document_locked`, `idempotency_key_reused`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/draft/documents/{document_id}": {
+      "delete": {
+        "operationId": "removeDocument",
+        "tags": [
+          "Draft"
+        ],
+        "summary": "Remove a document",
+        "description": "Removes a document from the draft, its bytes with it.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The document is removed.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Refused: `resource_not_found`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/draft/send": {
+      "post": {
+        "operationId": "sendDraft",
+        "tags": [
+          "Draft"
+        ],
+        "summary": "Send the draft",
+        "description": "Sends the draft to the number or the office you name, as far as you let your credential send without you. Your API key sends it on your plan, its pages counted there; or, where you have no plan, on the card you saved, its price held until the fax ends. An app you connected sends it on your plan alone, and only where you let it send straight away. Otherwise nothing is sent or held, the draft keeps where you named, and the answer gives the link where the fax waits for you on xipfax.com. So does a draft whose cover page is on, which xipfax.com draws there: a send to an office that asks for a cover page marked Confidential turns it on. So do a card its bank refused or asked you to confirm, and a send past the 20 a day your credentials make without you. `paid_by` and `confirm_url` say which. A send refused changes nothing of the draft. Name the draft’s documents as `GET /draft` gives them: a draft whose documents aren’t these, in this order, is refused `draft_changed`, so that nothing you didn’t name is sent.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendDraft"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The fax on its way, or your draft and where it waits for you.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_missing`, `parameter_invalid`, `parameter_unknown`, `idempotency_key_missing`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Refused: `resource_not_found`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused: `draft_changed`, `document_uploading`, `fax_already_paid`, `plan_missing`, `idempotency_key_in_use`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Refused: `content_too_large`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: `office_unknown`, `documents_missing`, `fax_too_long`, `account_sending_stopped`, `idempotency_key_reused`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Refused: `upstream_error`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Refused: `payments_unavailable`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/faxes": {
+      "get": {
+        "operationId": "listFaxes",
+        "tags": [
+          "Faxes"
+        ],
+        "summary": "List the faxes",
+        "description": "Every fax you sent and every fax sent to your number, newest first, a page at a time: the faxes your account’s web app logs, page for page. Give a page’s `next_cursor` as `starting_after` for the page after it.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/StartingAfter"
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "description": "One way’s faxes alone.",
+            "schema": {
+              "description": "Only the faxes you `sent`, or only those you `received`; both without it.",
+              "type": "string",
+              "enum": [
+                "sent",
+                "received"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of your faxes.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FaxPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_invalid`, `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/faxes/{fax_id}": {
+      "get": {
+        "operationId": "getFax",
+        "tags": [
+          "Faxes"
+        ],
+        "summary": "Read a fax",
+        "description": "A fax you sent or one sent to your number, as `GET /faxes` gives it, where it stands now; or your draft, `draft`, by its id, which the fax keeps once you send it.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/FaxId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The fax.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fax"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Refused: `resource_not_found`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/faxes/{fax_id}/confirmation": {
+      "get": {
+        "operationId": "getConfirmation",
+        "tags": [
+          "Faxes"
+        ],
+        "summary": "Read a fax’s confirmation",
+        "description": "A delivered fax’s confirmation, by a link that reads it for a few minutes: one page that says who received how many pages, from whom and when, and none of your pages, so you can pass it on. A fax not delivered has none.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/FaxId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The link that reads the confirmation.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Confirmation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Refused: `resource_not_found`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused: `fax_not_delivered`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plan": {
+      "get": {
+        "operationId": "getPlan",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Read the plan",
+        "description": "Your plan, as your account’s web app shows it: how it is paid for and what that costs, when it renews or ends, its fax number and this month’s pages; `plan` is null where you have none.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Your plan, or none.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanAnswer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/offices": {
+      "get": {
+        "operationId": "listOffices",
+        "tags": [
+          "Offices"
+        ],
+        "summary": "List the offices",
+        "description": "The government offices XipFax gives the fax number of, from the agencies’ own pages: those `search` finds, as XipFax’s own office search finds them for the same words, and for `place` where the agency gives a number for each place; in the list’s order, a page at a time. Give a page’s `next_cursor` as `starting_after` for the page after it.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/StartingAfter"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "The words an office’s name, its number or what it takes holds.",
+            "schema": {
+              "description": "What the office takes, its name or its number, as XipFax’s own office search takes them: `Form 2848`, `CP2000`. An office is listed where each word is in its name, its number or what it takes. Every office without it; 100 characters at most.",
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "place",
+            "in": "query",
+            "required": false,
+            "description": "Where the person lives, or where the business is.",
+            "schema": {
+              "description": "Where the person lives, or where the business is, by its postal code: `OH` for Ohio, `PR` for Puerto Rico; `APO-FPO` for an APO or FPO address; `ABROAD` for anywhere outside the United States. Where the agency gives a number for each place, the office for this one is listed, beside those for what applies wherever one lives, and the offices for other places are not; where it gives none for this place, all of them are.",
+              "type": "string",
+              "enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DE",
+                "DC",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY",
+                "AS",
+                "GU",
+                "MP",
+                "PR",
+                "VI",
+                "APO-FPO",
+                "ABROAD"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the offices.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_invalid`, `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhook-endpoints": {
+      "post": {
+        "operationId": "registerWebhookEndpoint",
+        "tags": [
+          "Webhook endpoints"
+        ],
+        "summary": "Register a webhook endpoint",
+        "description": "Registers an endpoint of your own server, which every event XipFax posts goes to from then on, as `webhooks` describes them, each signed with the endpoint’s own secret: the answer shows the secret, once, so keep it then. XipFax checks that the URL leads to an address on the internet, now and before each delivery. Your account keeps 16 endpoints at most, and registers 10 in an hour at most. An API key alone registers one, and revoking the key removes those it registered; an app’s token is refused `insufficient_scope`.",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewWebhookEndpoint"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The endpoint registered, and its signing secret.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              },
+              "Location": {
+                "description": "The endpoint, as `/webhook-endpoints/{endpoint_id}`.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpoint"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_missing`, `parameter_invalid`, `parameter_unknown`, `idempotency_key_missing`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Refused: `idempotency_key_in_use`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Refused: `content_too_large`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: `webhook_endpoints_full`, `webhook_url_not_public`, `webhook_url_unresolved`, `idempotency_key_reused`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Refused: `rate_limit_exceeded`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Refused: `service_unavailable`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhook-endpoints/{endpoint_id}": {
+      "delete": {
+        "operationId": "removeWebhookEndpoint",
+        "tags": [
+          "Webhook endpoints"
+        ],
+        "summary": "Remove a webhook endpoint",
+        "description": "Removes an endpoint of your account, whichever key registered it: no event goes to it from then on, a delivery still to be tried again among them. An API key alone removes one; an app’s token is refused `insufficient_scope`.",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          },
+          {
+            "$ref": "#/components/parameters/EndpointId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The endpoint is removed.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Refused: `resource_not_found`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "fax.delivered": {
+      "post": {
+        "operationId": "faxDelivered",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "A fax was delivered",
+        "description": "Posted once a fax you sent is delivered: `data` is the fax, `delivered`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WebhookId"
+          },
+          {
+            "$ref": "#/components/parameters/WebhookTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/WebhookSignature"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FaxEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "2XX": {
+            "description": "The event is taken. Anything else, or no answer within 15 seconds, is not: after a 408, a 429, a 5xx or no answer, XipFax tries again over about three days; after a redirect, which it doesn’t follow, or another 4xx, it stops."
+          }
+        }
+      }
+    },
+    "fax.failed": {
+      "post": {
+        "operationId": "faxFailed",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "A fax failed",
+        "description": "Posted once a fax you sent fails for good, with no try left: `data` is the fax, `failed`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WebhookId"
+          },
+          {
+            "$ref": "#/components/parameters/WebhookTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/WebhookSignature"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FaxEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "2XX": {
+            "description": "The event is taken. Anything else, or no answer within 15 seconds, is not: after a 408, a 429, a 5xx or no answer, XipFax tries again over about three days; after a redirect, which it doesn’t follow, or another 4xx, it stops."
+          }
+        }
+      }
+    },
+    "fax.received": {
+      "post": {
+        "operationId": "faxReceived",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "A fax arrived",
+        "description": "Posted once a fax sent to your number arrives: `data` is the fax, `received`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WebhookId"
+          },
+          {
+            "$ref": "#/components/parameters/WebhookTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/WebhookSignature"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FaxEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "2XX": {
+            "description": "The event is taken. Anything else, or no answer within 15 seconds, is not: after a 408, a 429, a 5xx or no answer, XipFax tries again over about three days; after a redirect, which it doesn’t follow, or another 4xx, it stops."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "What refused the request, from an open set: branch on it."
+              },
+              "message": {
+                "type": "string",
+                "description": "XipFax’s sentence, for a person; never branch on it."
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "The member it is about, as a dotted path from the body’s root; `query.<name>` for a query parameter and `header.<name>` for a header."
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "What is wrong with it."
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "The same, for a person."
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "code",
+                    "message"
+                  ]
+                },
+                "description": "One entry for each problem with the request; none where it has no parts."
+              },
+              "request_id": {
+                "type": "string",
+                "description": "The request, as its answer’s `X-Request-Id` names it."
+              },
+              "doc_url": {
+                "description": "The page that explains the code; null while none does.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "valid_versions": {
+                "description": "The released versions, which `version_invalid` names.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "details",
+              "request_id",
+              "doc_url"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "pages": {
+            "type": "integer",
+            "description": "The pages quoted."
+          },
+          "price": {
+            "type": "object",
+            "properties": {
+              "amount_minor": {
+                "type": "integer",
+                "description": "In the currency’s smallest unit: cents."
+              },
+              "currency": {
+                "type": "string",
+                "const": "USD"
+              }
+            },
+            "required": [
+              "amount_minor",
+              "currency"
+            ],
+            "description": "What the fax costs without a plan. A fax sent on the plan counts its pages there instead."
+          },
+          "price_shown": {
+            "type": "string",
+            "description": "The price as XipFax prints it: $4.99."
+          },
+          "terms": {
+            "type": "string",
+            "description": "How the price is made, as XipFax’s pages say it: the first pages, then each page."
+          },
+          "price_list": {
+            "type": "string",
+            "description": "The version of XipFax’s price list the quote is from."
+          }
+        },
+        "required": [
+          "pages",
+          "price",
+          "price_shown",
+          "terms",
+          "price_list"
+        ]
+      },
+      "Draft": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The draft, which becomes the fax once it is sent."
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DraftDocument"
+            },
+            "description": "Its documents, in the order the fax sends them: 250 at most."
+          }
+        },
+        "required": [
+          "id",
+          "documents"
+        ],
+        "description": "The fax you prepare, one at a time: the one your account’s web app shows too."
+      },
+      "DraftDocument": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The document."
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name, as it was added."
+          },
+          "size_bytes": {
+            "type": "integer",
+            "description": "Its size."
+          },
+          "page_count": {
+            "description": "Its pages, once XipFax has read it; null while it uploads.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "ready"
+            ],
+            "description": "`uploading` until XipFax has read it back, then `ready`. An open set: read what you know."
+          },
+          "url": {
+            "description": "A link that reads the document for a few minutes, once it is ready; null while it uploads, and in an answer given again for a repeated `Idempotency-Key`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "size_bytes",
+          "page_count",
+          "status",
+          "url"
+        ],
+        "description": "A document of the draft, in its place in the fax."
+      },
+      "DocumentAdded": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/DraftDocument"
+          },
+          "upload": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "headers": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "url",
+                  "headers"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where to send its bytes: a PUT to `url` with these `headers`, within a few minutes, as many bytes as `size_bytes` says; then complete it. Null where XipFax fetched it from its link. In an answer given again for a repeated `Idempotency-Key`, a fresh link while the document still uploads, and null once it is ready or removed."
+          }
+        },
+        "required": [
+          "document",
+          "upload"
+        ],
+        "description": "A document added to the draft, and where its bytes go."
+      },
+      "Money": {
+        "type": "object",
+        "properties": {
+          "amount_minor": {
+            "type": "integer",
+            "description": "In the currency’s smallest unit: cents."
+          },
+          "currency": {
+            "type": "string",
+            "description": "Its ISO 4217 code: `USD`."
+          }
+        },
+        "required": [
+          "amount_minor",
+          "currency"
+        ],
+        "description": "An amount of money."
+      },
+      "Fax": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The fax."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sent",
+              "received"
+            ],
+            "description": "`sent` for a fax you sent, `received` for one sent to your number."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "sending",
+              "delivered",
+              "failed",
+              "received"
+            ],
+            "description": "Where it stands: `draft` for your draft, read by its id until it is sent; `sending` until it is delivered or fails for good, then `delivered` or `failed`; `received` for a fax sent to your number. An open set: read what you know."
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "preparing",
+                  "sending"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where a fax being sent has got to: `queued`, `preparing` its pages, then `sending`; null for a draft, once it has ended, and for a fax received. An open set."
+          },
+          "office_id": {
+            "description": "The office it went to, by its id on XipFax’s list (`GET /offices`); null for a number typed, and for a fax received.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "to_number": {
+            "description": "The number it went to, `+1` and ten digits; for a fax received, your number it came to.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "from_number": {
+            "description": "For a fax you sent, the number it went from: your XipFax number, or XipFax’s where you have none; for your draft, null; for a fax received, the caller’s number in E.164, null where the caller’s line gave none.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pages": {
+            "description": "Its pages, the cover page among them.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "price": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What it costs: what its payment holds while it sends, and what was taken once it was delivered. Null for a fax sent on the plan or with a promo code, for one that failed, which costs nothing, and for a fax received."
+          },
+          "sent_at": {
+            "description": "When you sent it; for a fax received, when it came.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finished_at": {
+            "description": "When it was delivered or failed for good; null until then.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retry_at": {
+            "description": "When it is tried again, while a failed try waits for the next; null otherwise.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "no_answer",
+                  "busy",
+                  "call_dropped",
+                  "declined",
+                  "not_a_fax_number",
+                  "ours"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why its last try failed: `no_answer`, `busy`, `call_dropped`, `declined`, `not_a_fax_number`, or `ours` for a failure on XipFax’s side. Null where none failed. An open set."
+          },
+          "time_zone": {
+            "description": "The time zone its confirmation tells its times in, as the IANA database names it; null for a fax received.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sender_name": {
+            "description": "For a fax you sent, the sender’s name its header line gave.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cover_confidential": {
+            "type": "boolean",
+            "description": "Whether its cover page was marked Confidential; false for a fax received."
+          }
+        },
+        "required": [
+          "id",
+          "direction",
+          "status",
+          "step",
+          "office_id",
+          "to_number",
+          "from_number",
+          "pages",
+          "price",
+          "sent_at",
+          "finished_at",
+          "retry_at",
+          "failure",
+          "time_zone",
+          "sender_name",
+          "cover_confidential"
+        ],
+        "description": "A fax of your log: one you sent, or one sent to your number."
+      },
+      "FaxPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Fax"
+            },
+            "description": "The page’s items, in the list’s order."
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether a page comes after this one."
+          },
+          "next_cursor": {
+            "description": "What `starting_after` takes for the page after this one; null on the last page.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ],
+        "description": "A page of your log: the faxes you sent and received, newest first."
+      },
+      "Sent": {
+        "type": "object",
+        "properties": {
+          "fax": {
+            "$ref": "#/components/schemas/Fax"
+          },
+          "paid_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "plan",
+                  "card"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the fax is paid, once it is sent: `plan`, its pages counted on your plan; or `card`, its price held on the card you saved until it ends, taken once it is delivered and let go if it fails. Null where it isn’t sent, nothing held: `confirm_url` says where it waits. An open set: read what you know."
+          },
+          "confirm_url": {
+            "description": "Where the fax waits for you, where it isn’t sent: your draft on xipfax.com, once you sign in, where you look it over and send it, paying for it there where you have no plan. Null once it is sent.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "fax",
+          "paid_by",
+          "confirm_url"
+        ],
+        "description": "The draft sent: `fax` is the fax on its way, `sending`; or, where it waits for you on xipfax.com, your draft, `draft`, under the id the fax keeps once you send it."
+      },
+      "Confirmation": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "A link that reads the confirmation, a PDF of one page, for a few minutes."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "description": "A delivered fax’s confirmation: one page that says who received how many pages, from whom and when, which you can pass on."
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "interval": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ],
+            "description": "How often it is paid for: each `month`, or each `year`."
+          },
+          "price": {
+            "description": "What it costs each time it is paid for.",
+            "$ref": "#/components/schemas/Money"
+          },
+          "period_ends_at": {
+            "type": "string",
+            "description": "The end of the period paid for: the plan renews then, or ends then where it is cancelled."
+          },
+          "is_ending": {
+            "type": "boolean",
+            "description": "Whether it is cancelled, to end at `period_ends_at` rather than renew."
+          },
+          "refused_renewal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the renewal the card refused charges, until it is paid; null where none is owed."
+          },
+          "number": {
+            "type": "object",
+            "properties": {
+              "area_code": {
+                "type": "string",
+                "pattern": "^[2-9][0-9]{2}$",
+                "description": "The US area code it is in."
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "ordering",
+                  "active",
+                  "failed"
+                ],
+                "description": "`ordering` while XipFax gets it, `active` once it is yours, `failed` where none could be had in its area code. An open set."
+              },
+              "fax_number": {
+                "description": "The number, `+1` and ten digits, once it is ordered; null before, and once one fails.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "area_code",
+              "status",
+              "fax_number"
+            ],
+            "description": "The fax number that comes with the plan, yours while the plan lasts."
+          },
+          "pages": {
+            "type": "object",
+            "properties": {
+              "used": {
+                "type": "integer",
+                "description": "The pages sent and received this month."
+              },
+              "included": {
+                "type": "integer",
+                "description": "The pages the plan includes each month."
+              },
+              "resets_at": {
+                "type": "string",
+                "description": "When the month’s pages start again."
+              }
+            },
+            "required": [
+              "used",
+              "included",
+              "resets_at"
+            ],
+            "description": "The month’s pages, sent and received together."
+          }
+        },
+        "required": [
+          "interval",
+          "price",
+          "period_ends_at",
+          "is_ending",
+          "refused_renewal",
+          "number",
+          "pages"
+        ],
+        "description": "Your plan: your own fax number, and pages each month."
+      },
+      "PlanAnswer": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Your plan; null where you have none."
+          }
+        },
+        "required": [
+          "plan"
+        ],
+        "description": "Your plan, or none."
+      },
+      "Office": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The office, as XipFax’s list names it: `irs-caf-ogden`. A fax of your log names the office it went to by it."
+          },
+          "name": {
+            "type": "string",
+            "description": "The office by its agency and its name: `IRS Ogden CAF unit`."
+          },
+          "fax_number": {
+            "type": "string",
+            "description": "The number a fax to it goes to, `+1` and ten digits."
+          },
+          "fax_number_from_abroad": {
+            "description": "The number the agency gives a sender outside the United States, in E.164; null where it gives none.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "applies_to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Whom or what the agency gives this number for, where it gives others another: `Ohio`, or `businesses in Wisconsin`; with `place`, only what applies there, where any of it does. Empty where the office takes what it takes from anyone."
+          },
+          "takes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The forms and notices it takes, as XipFax’s pages name them: `Form 2848`."
+          },
+          "signed_in_ink": {
+            "type": "boolean",
+            "description": "Whether it takes a form only signed by hand, in ink."
+          },
+          "confidential_cover": {
+            "type": "boolean",
+            "description": "Whether it asks for a cover page marked Confidential, which a fax to it from XipFax marks."
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "The page’s or the form’s own title."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Its address."
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ]
+            },
+            "description": "The agency’s own pages that print the number."
+          },
+          "checked_on": {
+            "type": "string",
+            "description": "The day XipFax last found the number on each of its sources: `YYYY-MM-DD`."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "fax_number",
+          "fax_number_from_abroad",
+          "applies_to",
+          "takes",
+          "signed_in_ink",
+          "confidential_cover",
+          "sources",
+          "checked_on"
+        ],
+        "description": "A government office whose fax number XipFax gives, from the agency’s own pages."
+      },
+      "OfficePage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Office"
+            },
+            "description": "The page’s items, in the list’s order."
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether a page comes after this one."
+          },
+          "next_cursor": {
+            "description": "What `starting_after` takes for the page after this one; null on the last page.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ],
+        "description": "A page of XipFax’s offices: those your search finds, for your place where you give one, in the list’s order."
+      },
+      "WebhookEndpoint": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The endpoint, as `DELETE /webhook-endpoints/{endpoint_id}` names it."
+          },
+          "url": {
+            "type": "string",
+            "description": "Where XipFax posts each event."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When it was registered."
+          },
+          "secret": {
+            "description": "Its signing secret, `whsec_` and the base64 of its key, which signs every event posted to it: keep it now, as no other answer shows it. Null in an answer given again for a repeated `Idempotency-Key`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "created_at",
+          "secret"
+        ],
+        "description": "A webhook endpoint of your account, just registered: every event goes to it, signed with its own secret."
+      },
+      "FaxEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The event, the same on every delivery of it, as `webhook-id` names it: take each once."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "fax.delivered",
+              "fax.failed",
+              "fax.received"
+            ],
+            "description": "What happened: `fax.delivered` once a fax you sent is delivered, `fax.failed` once one fails for good, and `fax.received` once a fax sent to your number arrives. An open set: ignore a type you don’t handle."
+          },
+          "api_version": {
+            "type": "string",
+            "enum": [
+              "2026-11-03"
+            ],
+            "description": "The version `data` is in."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When it happened."
+          },
+          "data": {
+            "description": "The fax, as the event found it and as `GET /faxes` gives it.",
+            "$ref": "#/components/schemas/Fax"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "api_version",
+          "created_at",
+          "data"
+        ],
+        "description": "What XipFax tells your endpoint of a fax: one delivered, failed for good, or received."
+      },
+      "NewDocument": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[^\\p{Cc}\\p{Zl}\\p{Zp}]+$",
+            "description": "Its name, such as its file’s: 255 characters at most."
+          },
+          "size_bytes": {
+            "description": "Its size, to upload it: a PDF of 40 MB at most, sent by the link the answer gives.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 41943040
+          },
+          "url": {
+            "description": "Where XipFax fetches it from: an https link to a public address that answers with the PDF itself, 40 MB at most, within 15 seconds. XipFax follows no redirect.",
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "SendDraft": {
+        "type": "object",
+        "properties": {
+          "fax_number": {
+            "description": "The number to send it to, in the US, its territories or Canada, written as you like, such as `+1 202 555 0143`.",
+            "type": "string"
+          },
+          "office_id": {
+            "description": "Or the office to send it to, by its id on XipFax’s list (`GET /offices`), which gives its number.",
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "document_ids": {
+            "maxItems": 250,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The draft’s documents, as `GET /draft` names them, in its order: a draft whose documents aren’t these, in this order, is refused `draft_changed`, so that nothing you didn’t name is sent."
+          }
+        },
+        "required": [
+          "document_ids"
+        ],
+        "additionalProperties": false
+      },
+      "NewWebhookEndpoint": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Where XipFax posts each event: https on its usual port, at an address on the internet, 2,048 characters at most."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false,
+        "description": "A webhook endpoint to register: the URL of your own server that takes the events."
+      }
+    },
+    "parameters": {
+      "XipVersion": {
+        "name": "Xip-Version",
+        "in": "header",
+        "required": false,
+        "description": "The version to answer in; without it, the version that was current when the account was made.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "2026-11-03"
+          ],
+          "description": "A released version of the API: the day its contract was fixed."
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "A key of your own for the request, such as a UUID: 1 to 255 printable ASCII characters. For 24 hours, a request that names it again is answered as the first was, rather than run again, its signed links and an endpoint’s secret null, though a document added by its size and still uploading gets a fresh link to upload it to; one for another request is refused.",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      },
+      "DocumentId": {
+        "name": "document_id",
+        "in": "path",
+        "required": true,
+        "description": "The document, as the draft names it.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "FaxId": {
+        "name": "fax_id",
+        "in": "path",
+        "required": true,
+        "description": "The fax, as your log names it, or your draft, by its id.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "EndpointId": {
+        "name": "endpoint_id",
+        "in": "path",
+        "required": true,
+        "description": "The webhook endpoint, as the answer that registered it names it.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "How many items the page holds.",
+        "schema": {
+          "default": 20,
+          "description": "How many items the page holds: 20 unless you ask for another number, and 100 at most.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "StartingAfter": {
+        "name": "starting_after",
+        "in": "query",
+        "required": false,
+        "description": "The `next_cursor` of the page before, for the page after it. A cursor that names nothing the list holds gives an empty page.",
+        "schema": {
+          "description": "The `next_cursor` of the page before, for the page after it; none for the first page.",
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "WebhookId": {
+        "name": "webhook-id",
+        "in": "header",
+        "required": true,
+        "description": "The event’s id, the same on every delivery of it: take each once.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "WebhookTimestamp": {
+        "name": "webhook-timestamp",
+        "in": "header",
+        "required": true,
+        "description": "When XipFax made this delivery, in Unix seconds: refuse one far from your own clock.",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        }
+      },
+      "WebhookSignature": {
+        "name": "webhook-signature",
+        "in": "header",
+        "required": true,
+        "description": "`v1,` and the base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{body}`, the body exactly as it came, under the key your endpoint’s secret holds: the base64 after `whsec_`.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "headers": {
+      "X-Request-Id": {
+        "description": "XipFax’s id for the request, which an error body names as `request_id`.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Xip-Version": {
+        "description": "The version the answer is in.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "2026-11-03"
+          ],
+          "description": "A released version of the API: the day its contract was fixed."
+        }
+      }
+    },
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "An API key, `xipfax_key_live_` and 32 more characters, with no scopes."
+      },
+      "appToken": {
+        "type": "oauth2",
+        "description": "An app’s access token for the resource `https://api.xipfax.com`, from XipFax’s OAuth server by the authorization code flow with PKCE (S256).",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://backend.xipfax.com/auth/oauth2/authorize",
+            "tokenUrl": "https://backend.xipfax.com/auth/oauth2/token",
+            "refreshUrl": "https://backend.xipfax.com/auth/oauth2/token",
+            "scopes": {
+              "fax": "Every operation but registering and removing webhook endpoints, for the client who allowed the app.",
+              "offline_access": "A refresh token beside the access token."
+            }
+          }
+        }
+      }
+    }
+  }
+}

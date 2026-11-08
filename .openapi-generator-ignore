@@ -1,0 +1,12 @@
+# What openapi-generator would write that the repository keeps as its own or doesn't keep: the
+# README and go.mod are the repository's own, and the generator's CI file, push script, docs, tests,
+# copy of the document and .gitignore aren't kept.
+README.md
+go.mod
+go.sum
+.gitignore
+.travis.yml
+git_push.sh
+api/openapi.yaml
+docs/**
+test/**
