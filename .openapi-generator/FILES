@@ -19,7 +19,6 @@ model_fax_event.go
 model_fax_page.go
 model_money.go
 model_new_document.go
-model_new_webhook_endpoint.go
 model_office.go
 model_office_page.go
 model_office_source.go
@@ -32,5 +31,6 @@ model_quote_price.go
 model_send_draft.go
 model_sent.go
 model_webhook_endpoint.go
+model_webhook_endpoint_registration.go
 response.go
 utils.go

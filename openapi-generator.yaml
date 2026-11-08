@@ -20,8 +20,11 @@ globalProperties:
   apiDocs: 'false'
   modelDocs: 'false'
 # Error isn't an error in Go: the API's refusal is APIError, as the TypeScript SDK's is ApiError.
+# The body that registers an endpoint is WebhookEndpointRegistration, since the generator names
+# WebhookEndpoint's constructor NewWebhookEndpoint.
 modelNameMappings:
   Error: APIError
+  NewWebhookEndpoint: WebhookEndpointRegistration
 inlineSchemaNameMappings:
   Error_error: APIErrorObject
   Error_error_details_inner: APIErrorDetail

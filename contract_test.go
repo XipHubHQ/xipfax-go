@@ -86,7 +86,7 @@ var calls = map[string]func(context.Context, *xipfax.APIClient) error{
 	"registerWebhookEndpoint": func(ctx context.Context, client *xipfax.APIClient) error {
 		_, _, err := client.WebhookEndpointsAPI.RegisterWebhookEndpoint(ctx).
 			IdempotencyKey("register-endpoint-1").
-			NewWebhookEndpoint(xipfax.NewWebhookEndpoint{URL: "https://example.com/xipfax/events"}).
+			WebhookEndpointRegistration(xipfax.WebhookEndpointRegistration{URL: "https://example.com/xipfax/events"}).
 			Execute()
 		return err
 	},

@@ -24,10 +24,10 @@ import (
 type WebhookEndpointsAPIService service
 
 type ApiRegisterWebhookEndpointRequest struct {
-	ctx                context.Context
-	ApiService         *WebhookEndpointsAPIService
-	idempotencyKey     *string
-	newWebhookEndpoint *NewWebhookEndpoint
+	ctx                         context.Context
+	ApiService                  *WebhookEndpointsAPIService
+	idempotencyKey              *string
+	webhookEndpointRegistration *WebhookEndpointRegistration
 }
 
 // A key of your own for the request, such as a UUID: 1 to 255 printable ASCII characters. For 24 hours, a request that names it again is answered as the first was, rather than run again, its signed links and an endpoint’s secret null, though a document added by its size and still uploading gets a fresh link to upload it to; one for another request is refused.
@@ -36,8 +36,8 @@ func (r ApiRegisterWebhookEndpointRequest) IdempotencyKey(idempotencyKey string)
 	return r
 }
 
-func (r ApiRegisterWebhookEndpointRequest) NewWebhookEndpoint(newWebhookEndpoint NewWebhookEndpoint) ApiRegisterWebhookEndpointRequest {
-	r.newWebhookEndpoint = &newWebhookEndpoint
+func (r ApiRegisterWebhookEndpointRequest) WebhookEndpointRegistration(webhookEndpointRegistration WebhookEndpointRegistration) ApiRegisterWebhookEndpointRequest {
+	r.webhookEndpointRegistration = &webhookEndpointRegistration
 	return r
 }
 
@@ -90,8 +90,8 @@ func (a *WebhookEndpointsAPIService) RegisterWebhookEndpointExecute(r ApiRegiste
 	if strlen(*r.idempotencyKey) > 255 {
 		return localVarReturnValue, nil, reportError("idempotencyKey must have less than 255 elements")
 	}
-	if r.newWebhookEndpoint == nil {
-		return localVarReturnValue, nil, reportError("newWebhookEndpoint is required and must be specified")
+	if r.webhookEndpointRegistration == nil {
+		return localVarReturnValue, nil, reportError("webhookEndpointRegistration is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -113,7 +113,7 @@ func (a *WebhookEndpointsAPIService) RegisterWebhookEndpointExecute(r ApiRegiste
 	}
 	parameterAddToHeaderOrQuery(localVarHeaderParams, "Idempotency-Key", r.idempotencyKey, "simple", "")
 	// body params
-	localVarPostBody = r.newWebhookEndpoint
+	localVarPostBody = r.webhookEndpointRegistration
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
 		return localVarReturnValue, nil, err

@@ -17,37 +17,37 @@ import (
 	"fmt"
 )
 
-// checks if the NewWebhookEndpoint type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &NewWebhookEndpoint{}
+// checks if the WebhookEndpointRegistration type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &WebhookEndpointRegistration{}
 
-// NewWebhookEndpoint A webhook endpoint to register: the URL of your own server that takes the events.
-type NewWebhookEndpoint struct {
+// WebhookEndpointRegistration A webhook endpoint to register: the URL of your own server that takes the events.
+type WebhookEndpointRegistration struct {
 	// Where XipFax posts each event: https on its usual port, at an address on the internet, 2,048 characters at most.
 	URL string `json:"url"`
 }
 
-type _NewWebhookEndpoint NewWebhookEndpoint
+type _WebhookEndpointRegistration WebhookEndpointRegistration
 
-// NewNewWebhookEndpoint instantiates a new NewWebhookEndpoint object
+// NewWebhookEndpointRegistration instantiates a new WebhookEndpointRegistration object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewNewWebhookEndpoint(uRL string) *NewWebhookEndpoint {
-	this := NewWebhookEndpoint{}
+func NewWebhookEndpointRegistration(uRL string) *WebhookEndpointRegistration {
+	this := WebhookEndpointRegistration{}
 	this.URL = uRL
 	return &this
 }
 
-// NewNewWebhookEndpointWithDefaults instantiates a new NewWebhookEndpoint object
+// NewWebhookEndpointRegistrationWithDefaults instantiates a new WebhookEndpointRegistration object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewNewWebhookEndpointWithDefaults() *NewWebhookEndpoint {
-	this := NewWebhookEndpoint{}
+func NewWebhookEndpointRegistrationWithDefaults() *WebhookEndpointRegistration {
+	this := WebhookEndpointRegistration{}
 	return &this
 }
 
 // GetURL returns the URL field value
-func (o *NewWebhookEndpoint) GetURL() string {
+func (o *WebhookEndpointRegistration) GetURL() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -58,7 +58,7 @@ func (o *NewWebhookEndpoint) GetURL() string {
 
 // GetURLOk returns a tuple with the URL field value
 // and a boolean to check if the value has been set.
-func (o *NewWebhookEndpoint) GetURLOk() (*string, bool) {
+func (o *WebhookEndpointRegistration) GetURLOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -66,11 +66,11 @@ func (o *NewWebhookEndpoint) GetURLOk() (*string, bool) {
 }
 
 // SetURL sets field value
-func (o *NewWebhookEndpoint) SetURL(v string) {
+func (o *WebhookEndpointRegistration) SetURL(v string) {
 	o.URL = v
 }
 
-func (o NewWebhookEndpoint) MarshalJSON() ([]byte, error) {
+func (o WebhookEndpointRegistration) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -78,13 +78,13 @@ func (o NewWebhookEndpoint) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o NewWebhookEndpoint) ToMap() (map[string]interface{}, error) {
+func (o WebhookEndpointRegistration) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["url"] = o.URL
 	return toSerialize, nil
 }
 
-func (o *NewWebhookEndpoint) UnmarshalJSON(data []byte) (err error) {
+func (o *WebhookEndpointRegistration) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -106,53 +106,53 @@ func (o *NewWebhookEndpoint) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varNewWebhookEndpoint := _NewWebhookEndpoint{}
+	varWebhookEndpointRegistration := _WebhookEndpointRegistration{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varNewWebhookEndpoint)
+	err = decoder.Decode(&varWebhookEndpointRegistration)
 
 	if err != nil {
 		return err
 	}
 
-	*o = NewWebhookEndpoint(varNewWebhookEndpoint)
+	*o = WebhookEndpointRegistration(varWebhookEndpointRegistration)
 
 	return err
 }
 
-type NullableNewWebhookEndpoint struct {
-	value *NewWebhookEndpoint
+type NullableWebhookEndpointRegistration struct {
+	value *WebhookEndpointRegistration
 	isSet bool
 }
 
-func (v NullableNewWebhookEndpoint) Get() *NewWebhookEndpoint {
+func (v NullableWebhookEndpointRegistration) Get() *WebhookEndpointRegistration {
 	return v.value
 }
 
-func (v *NullableNewWebhookEndpoint) Set(val *NewWebhookEndpoint) {
+func (v *NullableWebhookEndpointRegistration) Set(val *WebhookEndpointRegistration) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableNewWebhookEndpoint) IsSet() bool {
+func (v NullableWebhookEndpointRegistration) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableNewWebhookEndpoint) Unset() {
+func (v *NullableWebhookEndpointRegistration) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableNewWebhookEndpoint(val *NewWebhookEndpoint) *NullableNewWebhookEndpoint {
-	return &NullableNewWebhookEndpoint{value: val, isSet: true}
+func NewNullableWebhookEndpointRegistration(val *WebhookEndpointRegistration) *NullableWebhookEndpointRegistration {
+	return &NullableWebhookEndpointRegistration{value: val, isSet: true}
 }
 
-func (v NullableNewWebhookEndpoint) MarshalJSON() ([]byte, error) {
+func (v NullableWebhookEndpointRegistration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableNewWebhookEndpoint) UnmarshalJSON(src []byte) error {
+func (v *NullableWebhookEndpointRegistration) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
