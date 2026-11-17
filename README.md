@@ -197,10 +197,6 @@ the SDK, copy the new document over `openapi.json`, run `scripts/generate.sh`, a
 changes. `scripts/gates.sh` checks that the SDK is what the document generates, formatted, vetted
 and built; `scripts/test.sh` runs the tests.
 
-## Help
-
-Write to [help@xipfax.com](mailto:help@xipfax.com).
-
 ## License
 
 [MIT](LICENSE).
