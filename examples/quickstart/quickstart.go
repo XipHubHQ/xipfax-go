@@ -39,7 +39,7 @@ const (
 )
 
 // realAndCharged is what the step that sends says first, as the docs' quickstart says it.
-const realAndCharged = "This step sends a real fax, and it’s charged. It goes to the number you name, so name one of your own. Its pages count on your plan, or where you have no plan its price is held on the card you saved, and taken once it’s delivered. A fax that fails costs nothing."
+const realAndCharged = "This step sends a real fax, and it’s charged. It goes to the number you name, so name one of your own. Its pages count on your plan where it covers the number, or where you have no plan its price is held on the card you saved, and taken once it’s delivered. A fax that fails costs nothing."
 
 // quickstart takes the quickstart's steps. The API's refusal stops it, answered as its error, a
 // *xipfax.GenericOpenAPIError whose Model is the API's own, which main.go prints.
@@ -49,7 +49,7 @@ func quickstart(ctx context.Context, client *xipfax.APIClient, in input) error {
 	if err != nil {
 		return err
 	}
-	in.say(fmt.Sprintf("A one-page fax costs %s without a plan: %s", quote.PriceShown, quote.Terms))
+	in.say(fmt.Sprintf("A one-page fax to a number in the US, its territories or Canada costs %s without a plan: %s", quote.PriceShown, quote.Terms))
 
 	// 2. Where a form goes: the offices that take Form 2848 from Ohio, and their numbers. Also free.
 	offices, _, err := client.OfficesAPI.ListOffices(ctx).Search("Form 2848").Place("OH").Limit(3).Execute()

@@ -37,6 +37,12 @@ var calls = map[string]func(context.Context, *xipfax.APIClient) error{
 		_, _, err := client.QuoteAPI.GetQuote(ctx).Pages(3).Execute()
 		return err
 	},
+	"quoteNumber": func(ctx context.Context, client *xipfax.APIClient) error {
+		_, _, err := client.QuoteAPI.QuoteNumber(ctx).
+			QuoteBody(xipfax.QuoteBody{Pages: 3, ToNumber: "+44 20 7946 0958"}).
+			Execute()
+		return err
+	},
 	"getDraft": func(ctx context.Context, client *xipfax.APIClient) error {
 		_, _, err := client.DraftAPI.GetDraft(ctx).Execute()
 		return err
@@ -100,6 +106,7 @@ var calls = map[string]func(context.Context, *xipfax.APIClient) error{
 // for the two that answer 204.
 var answers = map[string]string{
 	"getQuote":                standin.Quote,
+	"quoteNumber":             standin.Quote,
 	"getDraft":                `{"id":"fax_1","documents":[]}`,
 	"addDocument":             `{"document":` + standin.Document("doc_1", "letter.pdf") + `,"upload":null}`,
 	"completeDocument":        standin.Document("doc_1", "letter.pdf"),

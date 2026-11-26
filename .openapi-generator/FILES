@@ -27,6 +27,7 @@ model_plan_answer.go
 model_plan_number.go
 model_plan_pages.go
 model_quote.go
+model_quote_body.go
 model_quote_price.go
 model_send_draft.go
 model_sent.go
