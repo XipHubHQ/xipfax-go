@@ -3,11 +3,10 @@
   "info": {
     "title": "XipFax API",
     "version": "2026-11-03",
-    "description": "XipFax’s API, for your own server and the apps you connect, at `https://api.xipfax.com`.\n\n**Keys.** Every operation takes an API key of your XipFax account as a bearer token, as in `Authorization: Bearer xipfax_key_live_…`. A key acts for its own account alone, and a revoked key stops at once. A request with no key is refused `401 authentication_required`, and one whose key is revoked or unknown `401 authentication_failed`.\n\n**Apps.** Every operation but registering and removing a webhook endpoint also takes, as a bearer token, the access token XipFax’s OAuth server gives an app XipFax registers for the API, once a client connects it. The app asks for the resource `https://api.xipfax.com` and the scope `fax`; a token for another resource opens nothing here, and an app that names itself by the address of its metadata document is refused `invalid_target` for this one. A token acts for the client who allowed the app, and stops at once when they disconnect it. A request whose token has expired, or whose app is disconnected, is refused `401 authentication_failed`, and one whose token lacks `fax` `403 insufficient_scope`, as is a token’s request to register or remove a webhook endpoint, which takes an API key: an endpoint an app registered would go on hearing of your faxes once you disconnect the app.\n\n**Versions.** A request may name a version in `Xip-Version`; without one, it is answered in the version that was current when its account was made. Every answer names the version it is in, and a version that isn’t released is refused `400 version_invalid`, with the released ones in `valid_versions`. A version is the day its contract was fixed: a change that would break a client ships only in a new version, and one that adds ships to every version.\n\n**Errors.** A refusal is `{\"error\": {...}}`: a `code` to branch on, a `message` for a person, one entry in `details` for each problem, and the request’s id, which `X-Request-Id` names on every answer.\n\n**Retries.** Every POST names a key of your own in `Idempotency-Key`, and runs once for it: for 24 hours, a request that names the key again is answered as the first was, with its status, body and `X-Request-Id`, its signed links and an endpoint’s secret null, though a document added by its size and still uploading gets a fresh link to upload it to. A success and a `422` are kept; any other refusal lets the key go, for a retry to run.\n\n**Webhooks.** Register an endpoint of your own server with an API key, by `POST /webhook-endpoints` with its URL: the answer shows the endpoint’s signing secret, once. Each event goes to every webhook endpoint of your account when a fax you sent is delivered or fails for good, and when a fax sent to your number arrives. An event’s body is `{\"id\", \"type\", \"api_version\", \"created_at\", \"data\"}`, the fax in `data` as `GET /faxes` gives it. Each delivery is signed per Standard Webhooks with the endpoint’s own secret: verify `webhook-signature` before you trust the body. XipFax posts only to https at a public address, and follows no redirect. Answer a 2xx within 15 seconds. After a 408, a 429, a 5xx or no answer, XipFax tries again over about three days, later where `Retry-After` asks for longer, up to a day; after a redirect or another 4xx, it stops. An event may come more than once, or after a later one: take each `id` once. An endpoint hears of nothing more once you remove it, by `DELETE /webhook-endpoints/{endpoint_id}`, or revoke the key that registered it.\n\n**Additions.** Within a version, an answer may gain a member and an open set a new value: read what you know, and carry the rest through.\n\n## Changelog\n\n### 2026-11-08\n\n#### Added\n\n- Limits on the links `POST /draft/documents` fetches for your account, whichever key or app gives them: 10 a minute and 1,000 a day. Past either, a `url` is refused `429 rate_limit_exceeded`, nothing fetched, with `Retry-After` in seconds; and where XipFax can’t count them for the moment, `503 service_unavailable`, with `Retry-After` too.\n- A fresh `upload` link when a request to `POST /draft/documents` names its `Idempotency-Key` again while the document it added by its size is still uploading, where `upload` was null: a retry whose first answer was lost can still upload the document.\n\n### 2026-11-07\n\n#### Added\n\n- `POST /webhook-endpoints`: a webhook endpoint registered by your API key at the URL you give, its signing secret shown once, in the answer; and `DELETE /webhook-endpoints/{endpoint_id}`, which removes one. Revoking a key removes the endpoints it registered, and an app’s token is refused `403 insufficient_scope` on both.\n\n### 2026-11-05\n\n#### Added\n\n- `POST /draft/send`: the draft sent to the number or the office you name, its documents as you name them, as far as your key or app may send without you: on your plan, or by your key on the card you saved; otherwise, nothing sent, and the link where it waits for you on xipfax.com.\n- `GET /faxes/{fax_id}`: a fax of your log, or your draft by its id, as `GET /faxes` gives it.\n- `GET /faxes/{fax_id}/confirmation`: a delivered fax’s confirmation, by a link that reads it for a few minutes.\n\n### 2026-11-04\n\n#### Added\n\n- An app’s access token as the bearer of every request, beside an API key: the token XipFax’s OAuth server gives an app XipFax registers for the API, once a client connects it, for the resource `https://api.xipfax.com` and the scope `fax`, which stops when the client disconnects the app; and `403 insufficient_scope` for a token without that scope.\n- `GET /faxes`: your log, every fax you sent and received, newest first, a page at a time, one way’s alone where `direction` names it.\n- `GET /plan`: your plan, its price and its period, its fax number and this month’s pages.\n- `GET /offices`: the government offices XipFax gives the fax number of, those a search finds, for a place where the agency gives a number for each.\n- Webhooks: `fax.delivered`, `fax.failed` and `fax.received`, posted to each webhook endpoint of your account as a fax you sent is delivered or fails for good and as a fax sent to your number arrives, signed per Standard Webhooks with the endpoint’s own secret, and tried again over about three days until the endpoint takes it.\n\n### 2026-11-03\n\n#### Added\n\n- The API, at `https://api.xipfax.com`, in version `2026-11-03`: an API key as the bearer of every request, the `Xip-Version` header, and this document at `/openapi.json`.\n- `GET /quote`: the price of one fax of so many pages, sent without a plan, from XipFax’s price list.\n- `GET /draft`, the fax you prepare; its documents added by `POST /draft/documents`, from a file you upload by the link it gives or from a link XipFax fetches, completed by `POST /draft/documents/{document_id}/complete` and removed by `DELETE /draft/documents/{document_id}`.\n- `Idempotency-Key` on every POST, which runs once for each key.",
+    "description": "XipFax’s API, for your own server and the apps you connect, at `https://api.xipfax.com`.\n\n**Keys.** Every operation takes an API key of your XipFax account as a bearer token, as in `Authorization: Bearer xipfax_key_live_…`. A key acts for its own account alone, and a revoked key stops at once. A request with no key is refused `401 authentication_required`, and one whose key is revoked or unknown `401 authentication_failed`.\n\n**Apps.** Every operation but registering and removing a webhook endpoint also takes, as a bearer token, the access token XipFax’s OAuth server gives an app XipFax registers for the API, once a client connects it. The app asks for the resource `https://api.xipfax.com` and the scope `fax`; a token for another resource opens nothing here, and an app that names itself by the address of its metadata document is refused `invalid_target` for this one. A token acts for the client who allowed the app, and stops at once when they disconnect it. A request whose token has expired, or whose app is disconnected, is refused `401 authentication_failed`, and one whose token lacks `fax` `403 insufficient_scope`, as is a token’s request to register or remove a webhook endpoint, which takes an API key: an endpoint an app registered would go on hearing of your faxes once you disconnect the app.\n\n**Versions.** A request may name a version in `Xip-Version`; without one, it is answered in the version that was current when its account was made. Every answer names the version it is in, and a version that isn’t released is refused `400 version_invalid`, with the released ones in `valid_versions`. A version is the day its contract was fixed: a change that would break a client ships only in a new version, and one that adds ships to every version.\n\n**Errors.** A refusal is `{\"error\": {...}}`: a `code` to branch on, a `message` for a person, one entry in `details` for each problem, and the request’s id, which `X-Request-Id` names on every answer.\n\n**Retries.** Every POST names a key of your own in `Idempotency-Key`, and runs once for it: for 24 hours, a request that names the key again is answered as the first was, with its status, body and `X-Request-Id`, its signed links and an endpoint’s secret null, though a document added by its size and still uploading gets a fresh link to upload it to. A success and a `422` are kept; any other refusal lets the key go, for a retry to run.\n\n**Webhooks.** Register an endpoint of your own server with an API key, by `POST /webhook-endpoints` with its URL: the answer shows the endpoint’s signing secret, once. Each event goes to every webhook endpoint of your account when a fax you sent is delivered or fails for good, and when a fax sent to your number arrives. An event’s body is `{\"id\", \"type\", \"api_version\", \"created_at\", \"data\"}`, the fax in `data` as `GET /faxes` gives it. Each delivery is signed per Standard Webhooks with the endpoint’s own secret: verify `webhook-signature` before you trust the body. XipFax posts only to https at a public address, and follows no redirect. Answer a 2xx within 15 seconds. After a 408, a 429, a 5xx or no answer, XipFax tries again over about three days, later where `Retry-After` asks for longer, up to a day; after a redirect or another 4xx, it stops. An event may come more than once, or after a later one: take each `id` once. An endpoint hears of nothing more once you remove it, by `DELETE /webhook-endpoints/{endpoint_id}`, or revoke the key that registered it.\n\n**Additions.** Within a version, an answer may gain a member and an open set a new value: read what you know, and carry the rest through.\n\n## Changelog\n\n### 2026-11-26\n\n#### Added\n\n- Fax numbers outside the US, its territories and Canada, in `fax_number` and `to_number`, written with their country code. A number XipFax can’t fax is refused `400 parameter_invalid`, or `422 number_not_faxed` where XipFax’s price list holds no row for it.\n- A fax on your plan to a number it doesn’t cover isn’t sent by `POST /draft/send`: it waits for you at `confirm_url`, to be paid for on its own.\n\n### 2026-11-22\n\n#### Added\n\n- `POST /quote`: the price of one fax of so many pages to the number you name, and whether the plan covers it.\n- `plan_covers`, in a quote from `GET /quote` or `POST /quote`: whether the plan covers a fax to the number, its pages counted there.\n\n### 2026-11-11\n\n#### Added\n\n- `account_sending_stopped`, a fax’s `failure`: a fax of yours whose next try comes while your account can’t send faxes fails for good, not charged, and `fax.failed` is posted for it.\n\n### 2026-11-08\n\n#### Added\n\n- Limits on the links `POST /draft/documents` fetches for your account, whichever key or app gives them: 10 a minute and 1,000 a day. Past either, a `url` is refused `429 rate_limit_exceeded`, nothing fetched, with `Retry-After` in seconds; and where XipFax can’t count them for the moment, `503 service_unavailable`, with `Retry-After` too.\n- A fresh `upload` link when a request to `POST /draft/documents` names its `Idempotency-Key` again while the document it added by its size is still uploading, where `upload` was null: a retry whose first answer was lost can still upload the document.\n\n### 2026-11-07\n\n#### Added\n\n- `POST /webhook-endpoints`: a webhook endpoint registered by your API key at the URL you give, its signing secret shown once, in the answer; and `DELETE /webhook-endpoints/{endpoint_id}`, which removes one. Revoking a key removes the endpoints it registered, and an app’s token is refused `403 insufficient_scope` on both.\n\n### 2026-11-05\n\n#### Added\n\n- `POST /draft/send`: the draft sent to the number or the office you name, its documents as you name them, as far as your key or app may send without you: on your plan, or by your key on the card you saved; otherwise, nothing sent, and the link where it waits for you on xipfax.com.\n- `GET /faxes/{fax_id}`: a fax of your log, or your draft by its id, as `GET /faxes` gives it.\n- `GET /faxes/{fax_id}/confirmation`: a delivered fax’s confirmation, by a link that reads it for a few minutes.\n\n### 2026-11-04\n\n#### Added\n\n- An app’s access token as the bearer of every request, beside an API key: the token XipFax’s OAuth server gives an app XipFax registers for the API, once a client connects it, for the resource `https://api.xipfax.com` and the scope `fax`, which stops when the client disconnects the app; and `403 insufficient_scope` for a token without that scope.\n- `GET /faxes`: your log, every fax you sent and received, newest first, a page at a time, one way’s alone where `direction` names it.\n- `GET /plan`: your plan, its price and its period, its fax number and this month’s pages.\n- `GET /offices`: the government offices XipFax gives the fax number of, those a search finds, for a place where the agency gives a number for each.\n- Webhooks: `fax.delivered`, `fax.failed` and `fax.received`, posted to each webhook endpoint of your account as a fax you sent is delivered or fails for good and as a fax sent to your number arrives, signed per Standard Webhooks with the endpoint’s own secret, and tried again over about three days until the endpoint takes it.\n\n### 2026-11-03\n\n#### Added\n\n- The API, at `https://api.xipfax.com`, in version `2026-11-03`: an API key as the bearer of every request, the `Xip-Version` header, and this document at `/openapi.json`.\n- `GET /quote`: the price of one fax of so many pages, sent without a plan, from XipFax’s price list.\n- `GET /draft`, the fax you prepare; its documents added by `POST /draft/documents`, from a file you upload by the link it gives or from a link XipFax fetches, completed by `POST /draft/documents/{document_id}/complete` and removed by `DELETE /draft/documents/{document_id}`.\n- `Idempotency-Key` on every POST, which runs once for each key.",
     "contact": {
       "name": "XipFax",
-      "url": "https://xipfax.com",
-      "email": "help@xipfax.com"
+      "url": "https://xipfax.com/contact"
     }
   },
   "servers": [
@@ -33,7 +32,7 @@
           "Quote"
         ],
         "summary": "Quote a fax",
-        "description": "The price of one fax of so many pages, sent without a plan, from XipFax’s price list: what its checkout charges. A fax sent on the plan counts its pages there instead.",
+        "description": "The price of one fax of so many pages to a fax number in the US, its territories or Canada, sent without a plan, from XipFax’s price list: what its checkout charges. `POST /quote` gives a fax’s price to the number you name. `plan_covers` says whether the plan covers the number: a fax sent on the plan counts its pages there instead.",
         "parameters": [
           {
             "$ref": "#/components/parameters/XipVersion"
@@ -108,6 +107,139 @@
           },
           "403": {
             "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "quoteNumber",
+        "tags": [
+          "Quote"
+        ],
+        "summary": "Quote a fax to a number",
+        "description": "The price of one fax of so many pages to the number you name, sent without a plan, from XipFax’s price list: what its checkout charges. `plan_covers` says whether the plan covers the number: a fax sent on the plan counts its pages there instead. A number XipFax can’t fax is refused `parameter_invalid`, or `number_not_faxed` where XipFax’s price list holds no row for it. A quote changes nothing, so it takes no `Idempotency-Key`.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XipVersion"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The quote.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refused: `parameter_missing`, `parameter_invalid`, `parameter_unknown`, `version_invalid`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refused: `authentication_required`, `authentication_failed`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Refused: `insufficient_scope`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Refused: `content_too_large`.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Xip-Version": {
+                "$ref": "#/components/headers/Xip-Version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: `number_not_faxed`.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/X-Request-Id"
@@ -727,7 +859,7 @@
           "Draft"
         ],
         "summary": "Send the draft",
-        "description": "Sends the draft to the number or the office you name, as far as you let your credential send without you. Your API key sends it on your plan, its pages counted there; or, where you have no plan, on the card you saved, its price held until the fax ends. An app you connected sends it on your plan alone, and only where you let it send straight away. Otherwise nothing is sent or held, the draft keeps where you named, and the answer gives the link where the fax waits for you on xipfax.com. So does a draft whose cover page is on, which xipfax.com draws there: a send to an office that asks for a cover page marked Confidential turns it on. So do a card its bank refused or asked you to confirm, and a send past the 20 a day your credentials make without you. `paid_by` and `confirm_url` say which. A send refused changes nothing of the draft. Name the draft’s documents as `GET /draft` gives them: a draft whose documents aren’t these, in this order, is refused `draft_changed`, so that nothing you didn’t name is sent.",
+        "description": "Sends the draft to the number or the office you name, as far as you let your credential send without you. Your API key sends it on your plan, where it covers the number, its pages counted there; or, where you have no plan, on the card you saved, its price held until the fax ends. An app you connected sends it on your plan alone, where it covers the number, and only where you let it send straight away. Otherwise nothing is sent or held, the draft keeps where you named, and the answer gives the link where the fax waits for you on xipfax.com. So does a draft whose cover page is on, which xipfax.com draws there: a send to an office that asks for a cover page marked Confidential turns it on. So do a card its bank refused or asked you to confirm, and a send past the 20 a day your credentials make without you. `paid_by` and `confirm_url` say which. A send refused changes nothing of the draft. Name the draft’s documents as `GET /draft` gives them: a draft whose documents aren’t these, in this order, is refused `draft_changed`, so that nothing you didn’t name is sent.",
         "parameters": [
           {
             "$ref": "#/components/parameters/XipVersion"
@@ -874,7 +1006,7 @@
             }
           },
           "422": {
-            "description": "Refused: `office_unknown`, `documents_missing`, `fax_too_long`, `account_sending_stopped`, `idempotency_key_reused`.",
+            "description": "Refused: `office_unknown`, `number_not_faxed`, `documents_missing`, `fax_too_long`, `account_sending_stopped`, `idempotency_key_reused`.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/X-Request-Id"
@@ -1156,7 +1288,7 @@
           "Faxes"
         ],
         "summary": "Read a fax’s confirmation",
-        "description": "A delivered fax’s confirmation, by a link that reads it for a few minutes: one page that says who received how many pages, from whom and when, and none of your pages, so you can pass it on. A fax not delivered has none.",
+        "description": "A delivered fax’s confirmation, by a link that reads it for a few minutes: one page that says who received how many pages, from whom and when. A fax not delivered has none.",
         "parameters": [
           {
             "$ref": "#/components/parameters/XipVersion"
@@ -2061,7 +2193,11 @@
               "amount_minor",
               "currency"
             ],
-            "description": "What the fax costs without a plan. A fax sent on the plan counts its pages there instead."
+            "description": "What the fax costs without a plan, and on the plan where it doesn’t cover the number."
+          },
+          "plan_covers": {
+            "type": "boolean",
+            "description": "Whether the plan covers a fax to the number: sent on the plan, its pages count there instead of the price."
           },
           "price_shown": {
             "type": "string",
@@ -2079,6 +2215,7 @@
         "required": [
           "pages",
           "price",
+          "plan_covers",
           "price_shown",
           "terms",
           "price_list"
@@ -2263,7 +2400,7 @@
             ]
           },
           "to_number": {
-            "description": "The number it went to, `+1` and ten digits; for a fax received, your number it came to.",
+            "description": "The number it went to, in E.164; for a fax received, your number it came to.",
             "type": [
               "string",
               "null"
@@ -2325,6 +2462,7 @@
                   "call_dropped",
                   "declined",
                   "not_a_fax_number",
+                  "account_sending_stopped",
                   "ours"
                 ]
               },
@@ -2332,7 +2470,7 @@
                 "type": "null"
               }
             ],
-            "description": "Why its last try failed: `no_answer`, `busy`, `call_dropped`, `declined`, `not_a_fax_number`, or `ours` for a failure on XipFax’s side. Null where none failed. An open set."
+            "description": "Why its last try failed: `no_answer`, `busy`, `call_dropped`, `declined`, `not_a_fax_number`, `account_sending_stopped` once your account can’t send faxes, or `ours` for a failure on XipFax’s side. Null where none failed. An open set."
           },
           "time_zone": {
             "description": "The time zone its confirmation tells its times in, as the IANA database names it; null for a fax received.",
@@ -2424,7 +2562,7 @@
             "description": "How the fax is paid, once it is sent: `plan`, its pages counted on your plan; or `card`, its price held on the card you saved until it ends, taken once it is delivered and let go if it fails. Null where it isn’t sent, nothing held: `confirm_url` says where it waits. An open set: read what you know."
           },
           "confirm_url": {
-            "description": "Where the fax waits for you, where it isn’t sent: your draft on xipfax.com, once you sign in, where you look it over and send it, paying for it there where you have no plan. Null once it is sent.",
+            "description": "Where the fax waits for you, where it isn’t sent: your draft on xipfax.com, once you sign in, where you look it over and send it, paying for it there where you have no plan, or where it doesn’t cover the number. Null once it is sent.",
             "type": [
               "string",
               "null"
@@ -2522,7 +2660,7 @@
             "properties": {
               "used": {
                 "type": "integer",
-                "description": "The pages sent and received this month."
+                "description": "The pages sent and received on the plan this month. A fax paid on its own isn’t counted there."
               },
               "included": {
                 "type": "integer",
@@ -2788,7 +2926,7 @@
         "type": "object",
         "properties": {
           "fax_number": {
-            "description": "The number to send it to, in the US, its territories or Canada, written as you like, such as `+1 202 555 0143`.",
+            "description": "The fax number, with its country code, such as `+44 20 7946 0958`; a number in the US, its territories or Canada needs none.",
             "type": "string"
           },
           "office_id": {
@@ -2825,6 +2963,26 @@
         ],
         "additionalProperties": false,
         "description": "A webhook endpoint to register: the URL of your own server that takes the events."
+      },
+      "QuoteBody": {
+        "type": "object",
+        "properties": {
+          "pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 250,
+            "description": "The pages to send, from 1 to 250."
+          },
+          "to_number": {
+            "description": "The fax number, with its country code, such as `+44 20 7946 0958`; a number in the US, its territories or Canada needs none.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pages",
+          "to_number"
+        ],
+        "additionalProperties": false
       }
     },
     "parameters": {
